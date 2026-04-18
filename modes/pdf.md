@@ -1,5 +1,7 @@
 # Mode: pdf — ATS-Optimized PDF Generation
 
+> **Student or new grad (0–3 years)?** Use `/career-ops resume` instead — it generates a one-page LaTeX resume (Jake's Resume format) with education first, no professional summary, and a hard one-page limit. This `pdf` mode is for experienced candidates with 3+ years who need a multi-page CV with a professional summary and competency grid.
+
 ## Full Pipeline
 
 1. Read `cv.md` as source of truth

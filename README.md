@@ -68,7 +68,7 @@ Built by someone who used it to evaluate 740+ job offers, generate 100+ tailored
 | **6-Block Evaluation** | Role summary, CV match, level strategy, comp research, personalization, interview prep (STAR+R) |
 | **Interview Story Bank** | Accumulates STAR+Reflection stories across evaluations -- 5-10 master stories that answer any behavioral question |
 | **Negotiation Scripts** | Salary negotiation frameworks, geographic discount pushback, competing offer leverage |
-| **ATS PDF Generation** | Keyword-injected CVs with Space Grotesk + DM Sans design |
+| **ATS PDF Generation** | Keyword-injected CVs — HTML/CSS design (experienced) or Jake's Resume LaTeX (students/new grads) |
 | **Portal Scanner** | 45+ companies pre-configured (Anthropic, OpenAI, ElevenLabs, Retool, n8n...) + custom queries across Ashby, Greenhouse, Lever, Wellfound |
 | **Batch Processing** | Parallel evaluation with `claude -p` workers |
 | **Dashboard TUI** | Terminal UI to browse, filter, and sort your pipeline |
@@ -81,7 +81,12 @@ Built by someone who used it to evaluate 740+ job offers, generate 100+ tailored
 # 1. Clone and install
 git clone https://github.com/santifer/career-ops.git
 cd career-ops && npm install
-npx playwright install chromium   # Required for PDF generation
+npx playwright install chromium   # Required for PDF generation (experienced candidates)
+
+# Optional: LaTeX resume for students & new grads
+brew install basictex             # ~100MB minimal LaTeX install
+# Restart terminal after install, then verify:
+pdflatex --version
 
 # 2. Check setup
 npm run doctor                     # Validates all prerequisites
@@ -118,7 +123,8 @@ Career-ops is a single slash command with multiple modes:
 /career-ops                → Show all available commands
 /career-ops {paste a JD}   → Full auto-pipeline (evaluate + PDF + tracker)
 /career-ops scan           → Scan portals for new offers
-/career-ops pdf            → Generate ATS-optimized CV
+/career-ops pdf            → Generate ATS-optimized CV (HTML/CSS, experienced candidates)
+/career-ops resume         → Generate one-page LaTeX resume (students & new grads)
 /career-ops batch          → Batch evaluate multiple offers
 /career-ops tracker        → View application status
 /career-ops apply          → Fill application forms with AI
@@ -152,6 +158,73 @@ You paste a job URL or description
  Report  PDF  Tracker
   .md   .pdf   .tsv
 ```
+
+## Resume for Students & New Grads
+
+`/career-ops resume` generates a **one-page LaTeX resume** using [Jake's Resume](https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzwjncs) — the standard format used at top CS programs and recommended by most campus recruiting guides.
+
+> **Purpose-built for interns, co-op students, and new grads (0–3 years of experience).** If you have 3+ years of experience, use `/career-ops pdf` instead — it generates a multi-page HTML/CSS CV with a professional summary and competency grid.
+
+### How it differs from `/career-ops pdf`
+
+| | `/career-ops resume` | `/career-ops pdf` |
+|---|---|---|
+| **Who it's for** | Students & new grads (0–3 yrs) | Experienced candidates (3+ yrs) |
+| **Format** | LaTeX (Jake's Resume) | HTML/CSS → Playwright |
+| **Length** | One page, hard enforced | Multi-page |
+| **Section order** | Education → Experience → Projects → Skills | Summary → Experience → Projects → Education |
+| **Professional summary** | Never — wastes prime real estate | Yes, JD-tailored |
+| **Competency grid** | No | Yes (6–8 keyword phrases) |
+| **GPA** | Included if ≥ 3.5 (configurable) | Not applicable |
+| **Output** | `output/resume-{candidate}-{company}-{date}.pdf` | `output/cv-{candidate}-{company}-{date}.pdf` |
+
+### Installation
+
+`pdflatex` must be installed before using this command. The minimal install is sufficient — you don't need the full MacTeX distribution:
+
+```bash
+brew install basictex        # ~100MB — enough for Jake's template
+# Restart terminal after install
+
+# Verify installation:
+pdflatex --version
+
+# If a package is missing on first compile, install it:
+tlmgr install <package-name>
+```
+
+> **Note:** On first compile, BasicTeX may report a missing package (e.g. `fontawesome5`, `enumitem`). Run `tlmgr install <package>` for each one and rerun. This only happens once.
+
+### Configuration
+
+Add these fields to your `config/profile.yml` under a `resume:` key:
+
+```yaml
+resume:
+  career_track: cs     # cs | ds | eng | general (default: cs)
+  include_gpa: auto    # auto | true | false (auto = include if GPA ≥ 3.5)
+```
+
+**Career tracks** control how the Skills section is formatted:
+
+| Track | Value | Skills categories |
+|-------|-------|-------------------|
+| Computer Science / SWE | `cs` | Languages, Frameworks, Developer Tools, Databases |
+| Data Science / ML | `ds` | Languages, ML Libraries, Data Tools, Platforms |
+| Engineering (Mech/Elec/Civil/Chem) | `eng` | Software, Programming, Technical Skills, Tools |
+| General / Non-technical | `general` | Software, Technical Skills, Languages |
+
+### One-page judge
+
+Before compiling, the agent estimates the line count against the page budget (~55–60 lines for letter paper at 11pt). If the content overflows, it trims automatically in this order:
+
+1. Reduce experience bullets to 2 per role
+2. Drop the least-relevant project
+3. Remove relevant coursework from Education
+4. Reduce project bullets to 1 each
+5. If still over budget — asks you what to cut before proceeding
+
+The compiler (`generate-latex.mjs`) exits with code `2` if the PDF exceeds one page, triggering another trim pass. The loop continues until the resume fits.
 
 ## Pre-configured Portals
 
@@ -189,15 +262,17 @@ career-ops/
 ├── article-digest.md            # Your proof points (optional)
 ├── config/
 │   └── profile.example.yml      # Template for your profile
-├── modes/                       # 14 skill modes
+├── modes/                       # 15 skill modes
 │   ├── _shared.md               # Shared context (customize this)
 │   ├── oferta.md                # Single evaluation
-│   ├── pdf.md                   # PDF generation
+│   ├── pdf.md                   # PDF generation (experienced candidates)
+│   ├── resume.md                # LaTeX resume (students & new grads)
 │   ├── scan.md                  # Portal scanner
 │   ├── batch.md                 # Batch processing
 │   └── ...
 ├── templates/
-│   ├── cv-template.html         # ATS-optimized CV template
+│   ├── cv-template.html         # HTML/CSS CV template (experienced)
+│   ├── cv-template.tex          # Jake's Resume LaTeX template (students)
 │   ├── portals.example.yml      # Scanner config template
 │   └── states.yml               # Canonical statuses
 ├── batch/
@@ -221,7 +296,8 @@ career-ops/
 ![Bubble Tea](https://img.shields.io/badge/Bubble_Tea-FF75B5?style=flat&logo=go&logoColor=white)
 
 - **Agent**: Claude Code with custom skills and modes
-- **PDF**: Playwright/Puppeteer + HTML template
+- **PDF (experienced)**: Playwright + HTML/CSS template (Space Grotesk + DM Sans)
+- **PDF (students/new grads)**: pdflatex + Jake's Resume LaTeX template
 - **Scanner**: Playwright + Greenhouse API + WebSearch
 - **Dashboard**: Go + Bubble Tea + Lipgloss (Catppuccin Mocha theme)
 - **Data**: Markdown tables + YAML config + TSV batch files

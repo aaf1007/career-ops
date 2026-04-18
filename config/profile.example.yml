@@ -69,3 +69,16 @@ location:
   visa_status: "No sponsorship needed"
   # For remote roles outside your country:
   # onsite_availability: "1 week/month in any city"
+
+resume:
+  # Career track controls the Skills section category labels.
+  # cs       — Computer Science / Software Engineering (Languages, Frameworks, Developer Tools, Databases)
+  # ds       — Data Science / Machine Learning (Languages, ML Libraries, Data Tools, Platforms)
+  # eng      — Engineering: Mechanical / Electrical / Civil / Chemical (Software, Programming, Technical Skills, Tools)
+  # general  — Non-technical / General (Software, Technical Skills, Languages)
+  career_track: "cs"
+  # GPA inclusion rule.
+  # auto  — include GPA only if ≥ 3.5 (recommended)
+  # true  — always include GPA
+  # false — never include GPA
+  include_gpa: "auto"
